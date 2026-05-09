@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cybersecurity Exam Prep - Randomized</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --success: #27ae60;
+            --error: #e74c3c;
+            --bg: #f8f9fa;
+        }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-bottom: 100px;
+            scroll-behavior: smooth;
+        }
+        .header {
+            position: sticky;
+            top: 0;
+            background: white;
+            width: 100%;
+            max-width: 800px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        .quiz-container {
+            width: 90%;
+            max-width: 800px;
+            margin-top: 20px;
+        }
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 40px;
+            border-left: 5px solid var(--secondary);
+        }
+        .question-text {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+        .option {
+            display: block;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .option:hover { background: #f1f1f1; }
+        .option.selected {
+            background: #e1f0fa;
+            border-color: var(--secondary);
+        }
+        .feedback {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+            line-height: 1.5;
+        }
+        .correct-style { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .wrong-style { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        
+        .btn-check { background: var(--secondary); color: white; width: 100%; margin-top: 10px; border: none; padding: 12px; border-radius: 6px; cursor: pointer;}
+        .btn-check:disabled { background: #bdc3c7; cursor: not-allowed; }
+
+        .set-end-overlay {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin: 20px 0;
+        }
+        .btn-action { padding: 12px 30px; margin: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .btn-next { background: var(--success); color: white; }
+        .btn-quit { background: var(--error); color: white; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h2 style="margin:0;">Cybersecurity Exam Simulator</h2>
+    <p>Set <span id="set-num">1</span>/10 | Total Score: <span id="score">0</span></p>
+</div>
+
+<div id="quiz-mount" class="quiz-container"></div>
+
+<script>
+    // 1. YOUR DATASET
+    const allQuestions = [
+        { q: "The 'CIA Triad' stands for:", a: "B", ops: ["Control, Integrity, Authority", "Confidentiality, Integrity, Availability", "Continuity, Information, Asset", "Cyber, Internet, Access"], exp: "The CIA triad is the core of info-sec: Confidentiality (secrecy), Integrity (accuracy), and Availability (access)." },
+        { q: "Which principle ensures that users have only the permissions necessary for their tasks?", a: "C", ops: ["Defense in Depth", "Separation of Duties", "Least Privilege", "Accountability"], exp: "Least Privilege limits access to only what is needed, reducing the risk of accidental or malicious damage." },
+        { q: "If a website is taken down by a DDoS attack, which pillar is affected?", a: "C", ops: ["Confidentiality", "Integrity", "Availability", "Authenticity"], exp: "DDoS attacks aim to make a service unavailable to legitimate users." },
+        { q: "Encryption primarily supports which part of the CIA triad?", a: "A", ops: ["Confidentiality", "Availability", "Scalability", "Redundancy"], exp: "Encryption makes data unreadable to unauthorized parties, ensuring confidentiality." },
+        { q: "A digital signature provides which of the following?", a: "B", ops: ["Availability", "Non-repudiation", "Physical Security", "Risk Transference"], exp: "Non-repudiation ensures a sender cannot deny they sent a message." },
+        { q: "Which layer of the OSI model is responsible for IP addressing?", a: "B", ops: ["Layer 2 (Data Link)", "Layer 3 (Network)", "Layer 4 (Transport)", "Layer 7 (Application)"], exp: "Layer 3 (Network) handles routing and logical addressing (IP)." },
+        { q: "TCP is considered 'connection-oriented' because of what process?", a: "B", ops: ["Packet switching", "The Three-Way Handshake", "Port forwarding", "Encryption"], exp: "TCP uses a three-way handshake (SYN, SYN-ACK, ACK) to establish a connection before data transfer." },
+        { q: "Which protocol is used to securely browse the web?", a: "C", ops: ["HTTP", "FTP", "HTTPS", "SNMP"], exp: "HTTPS uses TLS encryption to protect web traffic." },
+        { q: "A stateful firewall monitors:", a: "C", ops: ["Only the source IP", "Only the destination IP", "The state of active connections", "The physical hardware address"], exp: "Stateful firewalls track the status of network connections to distinguish legitimate packets." },
+        { q: "UDP is often used for streaming because:", a: "B", ops: ["It is more secure than TCP", "It has lower overhead and doesn't wait for acknowledgments", "It automatically encrypts data", "It uses Layer 2 exclusively"], exp: "UDP is 'best-effort' and fast, which is better for real-time traffic like video where speed is more important than 100% accuracy." },
+        { q: "What is the process of removing unnecessary services and software from an OS?", a: "B", ops: ["Softening", "Hardening", "Patching", "Routing"], exp: "System hardening reduces the attack surface by removing unused tools and services." },
+        { q: "Which of the following is a common Linux file permission command?", a: "B", ops: ["ipconfig", "chmod", "sudo", "ls"], exp: "The chmod command is used to change file or directory permissions in Linux." },
+        { q: "A 'Zero-Day' vulnerability is one that:", a: "B", ops: ["Has been fixed for zero days", "Is exploited before a patch is available", "Only affects Windows 10", "Costs zero dollars to fix"], exp: "A zero-day is a flaw unknown to the vendor, meaning there is no time ('zero days') to prepare a patch before it might be exploited." },
+        { q: "What is the primary goal of 'Patch Management'?", a: "B", ops: ["To increase internet speed", "To fix known security vulnerabilities and bugs", "To change user passwords", "To monitor employee emails"], exp: "Patching updates software to fix security holes and bugs found after release." },
+        { q: "SQL Injection targets which component?", a: "B", ops: ["The Firewall", "The Database via web input", "The Physical Server", "The Router"], exp: "SQLi involves injecting malicious database queries through input fields to steal or damage data." },
+        { q: "Why are IoT devices often considered a security risk?", a: "B", ops: ["They are too expensive", "They often use hardcoded, default passwords", "They don't connect to the internet", "They only work on Linux"], exp: "Many IoT devices have weak security out of the box, like default credentials that are easy to guess." },
+        { q: "What does MDM stand for in mobile security?", a: "B", ops: ["Mobile Data Management", "Mobile Device Management", "Maximum Data Mobility", "Multiple Device Monitoring"], exp: "MDM allows organizations to manage, secure, and enforce policies on mobile devices." },
+        { q: "Connecting to a public Wi-Fi without a VPN primarily risks:", a: "B", ops: ["Hardware failure", "Eavesdropping/Man-in-the-Middle attacks", "Battery drain", "Loss of physical device"], exp: "Public Wi-Fi is often unencrypted, allowing attackers to intercept (eavesdrop) your traffic." },
+        { q: "What is the first phase of ethical hacking?", a: "C", ops: ["Scanning", "Gaining Access", "Reconnaissance (Footprinting)", "Maintaining Access"], exp: "Reconnaissance is the information-gathering phase used to plan an attack." },
+        { q: "An ethical hacker is often referred to as a:", a: "B", ops: ["Black Hat", "White Hat", "Grey Hat", "Script Kiddie"], exp: "White Hats use their skills for legal and defensive purposes." },
+        { q: "Which tool is commonly used for network scanning and port discovery?", a: "B", ops: ["Wireshark", "Nmap", "Metasploit", "John the Ripper"], exp: "Nmap is the industry standard for discovering hosts and services on a network." },
+        { q: "A DMZ (Demilitarized Zone) is used to:", a: "B", ops: ["Store sensitive payroll data", "Host public-facing services (like web servers) while protecting the internal network", "Encrypt all employee emails", "Block all incoming traffic"], exp: "A DMZ isolates public services from the private internal network for better security." },
+        { q: "What is the purpose of an IDS (Intrusion Detection System)?", a: "B", ops: ["To block traffic automatically", "To monitor and alert on suspicious activity", "To speed up the network", "To assign IP addresses"], exp: "An IDS watches network traffic and sends alerts when it detects something suspicious." },
+        { q: "What is the primary function of a SIEM?", a: "B", ops: ["To create backups", "To aggregate and correlate logs from multiple sources", "To host websites", "To manage employee payroll"], exp: "SIEM tools provide real-time analysis of security alerts generated by applications and network hardware." },
+        { q: "In incident response, what is 'Containment'?", a: "B", ops: ["Deleting the server", "Limiting the scope and impact of an ongoing attack", "Finding out who started the attack", "Restoring data from backups"], exp: "Containment prevents an attack from spreading further across the network." },
+        { q: "ISO/IEC 27001 is a standard for:", a: "B", ops: ["Building computer hardware", "Information Security Management Systems (ISMS)", "Writing Python code", "Ethical hacking techniques"], exp: "ISO 27001 provides a framework for managing information security risks." },
+        { q: "What is a 'Policy' in an enterprise?", a: "B", ops: ["A step-by-step technical guide", "A high-level statement of management intent", "A specific brand of firewall", "An international law"], exp: "Policies are high-level rules set by leadership that define the organization's security goals." },
+        { q: "Version control (like Git) is essential for:", a: "A", ops: ["Tracking changes and maintaining data integrity in projects", "Increasing the CPU speed", "Monitoring employee attendance", "Blocking social media sites"], exp: "Version control tracks every modification to the code, allowing you to revert to previous versions if needed." },
+        { q: "When reporting a security flaw, a professional should:", a: "B", ops: ["Post it on social media immediately", "Follow the company’s internal reporting and disclosure procedure", "Tell no one and try to fix it secretly", "Sell the info to a third party"], exp: "Professional disclosure ensures the vulnerability is fixed before it becomes public knowledge." },
+        { q: "Conflict resolution in a technical team is best handled by:", a: "B", ops: ["Ignoring the issue", "Professional communication and focusing on objective goals", "Terminating all involved parties", "Choosing the person with the highest degree"], exp: "Focusing on data and professional goals helps resolve technical disagreements objectively." },
+        { q: "Which protocol is used to resolve a domain name (google.com) to an IP address?", a: "B", ops: ["DHCP", "DNS", "ARP", "ICMP"], exp: "DNS acts as the phonebook of the internet, translating names to IP addresses." },
+        { q: "A 'Man-in-the-Middle' (MitM) attack specifically targets which CIA pillar?", a: "B", ops: ["Availability", "Confidentiality and Integrity", "Scalability", "Durability"], exp: "MitM attacks allow attackers to listen in (Confidentiality) or alter data (Integrity)." },
+        { q: "Which port does HTTPS typically use?", a: "C", ops: ["80", "21", "443", "25"], exp: "Port 443 is the default for encrypted web traffic (HTTPS)." },
+        { q: "In Linux, which command is used to view the contents of a file in the terminal?", a: "C", ops: ["ls", "cd", "cat", "mkdir"], exp: "The 'cat' command (concatenate) prints the file content to the screen." },
+        { q: "What is 'Bluejacking'?", a: "B", ops: ["Hijacking a blue car", "Sending unauthorized messages over Bluetooth", "Stealing a Blue-ray player", "A type of phishing email"], exp: "Bluejacking is used to send unwanted messages to Bluetooth-enabled devices." },
+        { q: "What is 'Passive Reconnaissance'?", a: "B", ops: ["Directly pinging a server", "Gathering information without interacting with the target (e.g., social media)", "Exploiting a database", "Brute-forcing a password"], exp: "Passive recon involves gathering data through public sources without touching the target's systems directly." },
+        { q: "What is the goal of 'Clearing Tracks'?", a: "B", ops: ["Speeding up the computer", "Deleting logs to hide evidence of a hack", "Installing a virus", "Creating a backup"], exp: "Attackers delete logs and history to hide their presence and avoid detection." },
+        { q: "Binary Grabbing is a technique used in which phase?", a: "B", ops: ["Reconnaissance", "Scanning", "Maintaining Access", "Reporting"], exp: "Banner grabbing is a scanning technique used to find out what software/version is running on a port." },
+        { q: "What does a 'Honey Pot' do in a network?", a: "B", ops: ["Provides free Wi-Fi", "Acts as a trap to lure and observe attackers", "Speeds up the database", "Encrypts payroll files"], exp: "Honey pots are fake systems used to distract attackers and learn their methods." },
+        { q: "Which of the following is a 'Physical Security' control?", a: "B", ops: ["Firewall", "Biometric Thumbprint Scanner", "Complex Password Policy", "Antivirus"], exp: "Biometrics physically restrict access to devices or rooms." },
+        { q: "A 'False Positive' in security monitoring means:", a: "B", ops: ["A real attack was missed", "An alert was triggered for a legitimate/harmless action", "The system crashed", "The hacker was caught"], exp: "A false positive is a 'false alarm' where safe traffic is flagged as a threat." },
+        { q: "The 'Incident Response' phase where you restore systems to normal operation is called:", a: "C", ops: ["Eradication", "Containment", "Recovery", "Preparation"], exp: "Recovery involves bringing systems back online and monitoring for further issues." },
+        { q: "Which ISO 27001 document describes what an organization is doing to manage risk?", a: "A", ops: ["Statement of Applicability (SoA)", "Resume", "Sales Pitch", "Product Catalog"], exp: "The SoA lists which security controls are being used and why." },
+        { q: "Version Control prevents which issue in team projects?", a: "B", ops: ["High electricity bills", "Overwriting a teammate's code changes accidentally", "Malware infections", "Slow internet"], exp: "It allows multiple people to work on the same project without deleting each other's work." },
+        { q: "What is the primary purpose of a 'Security Awareness Training' program?", a: "B", ops: ["To teach employees how to code", "To reduce the risk of human-based threats like phishing", "To install new software", "To monitor employee keystrokes"], exp: "Human error is a major risk; training helps staff recognize and avoid traps like phishing." },
+        { q: "What is 'Social Engineering' via phone calls called?", a: "C", ops: ["Phishing", "Smishing", "Vishing", "Whaling"], exp: "Vishing stands for 'Voice Phishing'." },
+        { q: "A 'Standard Operating Procedure' (SOP) is:", a: "B", ops: ["A high-level law", "A step-by-step instruction to achieve consistency", "A type of firewall", "A programming language"], exp: "SOPs ensure that routine tasks are performed the same way every time for security and efficiency." },
+        { q: "In the 'Risk Treatment' process, 'Risk Acceptance' means:", a: "C", ops: ["Buying insurance", "Fixing the problem", "Acknowledging the risk but deciding not to act because the cost is too high", "Ignoring the risk exists"], exp: "Sometimes the cost of fixing a small risk is more than the damage it could cause, so management accepts it." },
+        { q: "Which protocol is used for sending emails?", a: "B", ops: ["POP3", "SMTP", "IMAP", "SSH"], exp: "SMTP (Simple Mail Transfer Protocol) is the standard for pushing emails between servers." },
+        { q: "What is 'Salting' in password security?", a: "B", ops: ["Changing the password every day", "Adding random data to a password before hashing it", "Using only numbers", "Encrypting the username"], exp: "Salting makes it harder for attackers to use pre-calculated 'rainbow tables' to crack passwords." },
+        { q: "What is the primary purpose of the ARP (Address Resolution Protocol)?", a: "A", ops: ["To map an IP address to a MAC address", "To encrypt web traffic", "To assign IP addresses to new devices", "To block unauthorized pings"], exp: "ARP is used at Layer 2 to find the physical address (MAC) associated with a known IP." },
+        { q: "Which of these is a secure alternative to Telnet?", a: "B", ops: ["FTP", "SSH (Secure Shell)", "HTTP", "SNMP"], exp: "SSH encrypts the connection, whereas Telnet sends everything (including passwords) in plain text." },
+        { q: "What is a 'Rootkit'?", a: "B", ops: ["A tool to speed up a computer", "Malware designed to provide privileged access while hiding its presence", "A type of network router", "A legal software for remote support"], exp: "Rootkits dig deep into the OS to hide themselves and other malware from antivirus software." },
+        { q: "In Windows, which tool is used to manage user permissions and security policies across a domain?", a: "C", ops: ["Notepad", "Task Manager", "Active Directory", "Disk Cleanup"], exp: "Active Directory (AD) is the central authority for managing users and computers in a Windows network." },
+        { q: "Which protocol uses a 'Best Effort' delivery model without error recovery?", a: "B", ops: ["TCP", "UDP", "HTTPS", "SSH"], exp: "UDP sends packets without checking if they arrived, reducing delay at the cost of reliability." },
+        { q: "What does 'Air Gapping' a computer mean?", a: "B", ops: ["Putting it in a room with a fan", "Physically isolating it from all networks", "Using only wireless connections", "Using a transparent case"], exp: "An air-gapped system is physically disconnected from the internet and local networks to protect highly sensitive data." },
+        { q: "What is 'Sideloading' on a mobile device?", a: "B", ops: ["Charging the phone from the side", "Installing apps from sources other than the official App Store", "Syncing photos to the cloud", "Using two apps at once"], exp: "Sideloading bypasses official store security checks and increases the risk of malware." },
+        { q: "What is the main risk of an 'Evil Twin' attack?", a: "B", ops: ["It doubles your internet speed", "A fake Wi-Fi access point mimics a legitimate one to steal data", "It deletes your contacts", "It causes the phone to overheat"], exp: "The 'Evil Twin' tricks you into connecting to a hacker's hotspot by using a familiar name (like 'Starbucks_Free')." },
+        { q: "Which technology is used for short-range communication like mobile payments?", a: "A", ops: ["NFC (Near Field Communication)", "GPS", "5G", "HTTP"], exp: "NFC allows devices to communicate over very short distances (centimeters)." },
+        { q: "What is a 'Botnet'?", a: "B", ops: ["A group of computers used for research", "A network of compromised devices controlled by a hacker", "A high-speed fiber optic cable", "A type of chat application"], exp: "Botnets are used to launch large-scale attacks like DDoS or spam campaigns." },
+        { q: "What is 'White-Box' testing?", a: "B", ops: ["Testing with no knowledge of the internal system", "Testing with full knowledge of the internal code and infrastructure", "Testing while wearing a white suit", "Testing only the physical locks"], exp: "White-box testers have full access to blueprints and source code before they start." },
+        { q: "What does 'Privilege Escalation' involve?", a: "B", ops: ["Getting a promotion at work", "Moving from a low-level user account to an administrative account", "Deleting a user account", "Encrypting a file"], exp: "It is the process of gaining higher-level access than originally intended." },
+        { q: "Which of the following is an example of 'Social Engineering'?", a: "B", ops: ["Cracking a password with a script", "Calling an employee pretending to be IT to get their login", "Scanning for open ports", "Updating a firewall rule"], exp: "Social engineering targets human psychology to trick people into revealing secrets." },
+        { q: "What is a 'Buffer Overflow'?", a: "B", ops: ["A printer running out of paper", "An anomaly where a program writes data beyond a buffer's boundary", "A slow internet connection", "Too many emails in an inbox"], exp: "Overflows can overwrite adjacent memory, leading to crashes or malicious code execution." },
+        { q: "Google Dorking is a technique used in which phase?", a: "B", ops: ["Exploitation", "Reconnaissance", "Clearing Tracks", "Hardware Hardening"], exp: "Google Dorking uses advanced search queries to find hidden information or vulnerabilities online." },
+        { q: "What is a 'VPC' in cloud security?", a: "B", ops: ["Very Private Computer", "Virtual Private Cloud", "Verified Password Control", "Virtual Public Connection"], exp: "A VPC is a private, isolated section of a public cloud provider's network." },
+        { q: "What is the purpose of an IPS compared to an IDS?", a: "B", ops: ["An IPS only watches, while an IDS stops attacks", "An IPS can actively block malicious traffic, while an IDS only alerts", "An IPS is for physical security only", "There is no difference"], exp: "Prevention (IPS) is active; Detection (IDS) is passive." },
+        { q: "What does a 'Packet Sniffer' like Wireshark do?", a: "B", ops: ["It speeds up packet delivery", "It captures and analyzes network traffic", "It deletes viruses", "It creates new IP addresses"], exp: "Sniffers let you see exactly what is moving across your network interface." },
+        { q: "A 'True Negative' in security monitoring means:", a: "B", ops: ["An attack happened but was ignored", "The system correctly identified that there was no attack", "The system crashed", "A user was banned by mistake"], exp: "A true negative means the system stayed quiet because there was no threat—the correct behavior." },
+        { q: "In the 'Diamond Model' of intrusion analysis, what are the four nodes?", a: "B", ops: ["Fire, Water, Earth, Air", "Adversary, Infrastructure, Capability, Victim", "Password, Username, Email, Phone", "Hardware, Software, Network, Human"], exp: "The Diamond Model helps analysts map out the relationships between the attacker and the target." },
+        { q: "What is 'Compliance' in information security?", a: "B", ops: ["Doing whatever the boss says", "Following legal and regulatory requirements (like GDPR or HIPAA)", "Buying the most expensive firewall", "Reporting every employee for small mistakes"], exp: "Compliance ensures an organization meets the legal standards for data protection." },
+        { q: "The 'PDCA' cycle in ISO 27001 stands for:", a: "B", ops: ["Power, Data, Control, Access", "Plan, Do, Check, Act", "Protect, Detect, Correct, Analyze", "Password, DNS, CIA, ARP"], exp: "PDCA is a management method for continuous improvement of security controls." },
+        { q: "What is a 'Security Audit'?", a: "B", ops: ["A training session for new hires", "A systematic evaluation of an organization's security controls", "A budget meeting", "A type of software virus"], exp: "Audits check if the actual security practices match the written policies." },
+        { q: "What is 'Data Sovereignty'?", a: "B", ops: ["Data that is very powerful", "The concept that data is subject to the laws of the country it is located in", "Encrypting data 10 times", "Selling data to other companies"], exp: "If your data is stored in Germany, it is subject to German (and EU) privacy laws." },
+        { q: "What is a 'Non-Disclosure Agreement' (NDA)?", a: "B", ops: ["A technical manual", "A legal contract to keep sensitive information secret", "A type of software license", "A password reset form"], exp: "NDAs are used to legally prevent employees or partners from sharing trade secrets." },
+        { q: "In version control, what does a 'Commit' do?", a: "B", ops: ["Deletes the code", "Saves changes to the local repository with a descriptive message", "Shuts down the computer", "Sends an email to the client"], exp: "Committing 'check-ins' your changes so they are recorded in the project history." },
+        { q: "If you find a USB drive in the parking lot, what should you do?", a: "C", ops: ["Plug it into your workstation to find the owner", "Take it home and use it", "Hand it to the IT Security department without plugging it in", "Throw it in the trash"], exp: "Unknown USBs can contain malware that triggers as soon as you plug them in." },
+        { q: "What is 'Business Continuity Planning' (BCP)?", a: "B", ops: ["Planning how to hire more people", "Planning how a business will continue to operate during and after a disaster", "Planning the annual holiday party", "Designing a new logo"], exp: "BCP focuses on keeping the business running during an outage or emergency." },
+        { q: "What is 'Internal Threat' (Insider Threat)?", a: "B", ops: ["A hacker from another country", "A threat that comes from within the organization (employee or contractor)", "A virus on a website", "A power outage"], exp: "Insiders often have legitimate access, making them harder to detect than external attackers." },
+        { q: "When working in a team, 'Documentation' is important because:", a: "B", ops: ["It makes the files look bigger", "It ensures others can understand and maintain the system in the future", "It is required by law for all software", "It prevents the computer from crashing"], exp: "Good documentation saves time and prevents errors when someone else has to take over your work." },
+        { q: "Which of the following is a 'Strong Password'?", a: "C", ops: ["password123", "12345678", "Blue!Sky#2026", "admin"], exp: "Strong passwords use a mix of uppercase, lowercase, numbers, and special characters." },
+        { q: "What does 'Biometrics' use for authentication?", a: "C", ops: ["Something you know (Password)", "Something you have (Token)", "Something you are (Fingerprint/Iris)", "Something you do (Walking)"], exp: "Biometrics uses physical traits unique to a human body." },
+        { q: "What is 'Ransomware'?", a: "B", ops: ["Malware that steals your photos", "Malware that encrypts your files and demands money to unlock them", "A tool to find cheaper gas prices", "A type of firewall"], exp: "Ransomware holds your data hostage until a fee is paid." },
+        { q: "What is the 'Minimum Password Age' setting used for?", a: "B", ops: ["To make sure kids don't use the computer", "To prevent users from changing their password back to an old one immediately", "To see how old the user is", "To set the expiration date"], exp: "This prevents users from cycling through 10 passwords in a minute just to get back to their original one." },
+        { q: "What is an 'Air Gap'?", a: "B", ops: ["A type of cooling system", "A network security measure to ensure a computer is physically isolated", "The distance between two routers", "A gap in a firewall rule"], exp: "Air gapping is the ultimate protection against network-based hacks." },
+        { q: "What is 'Phishing'?", a: "B", ops: ["A hobby involving fish", "Fraudulent emails sent to steal sensitive information", "Using a script to guess a password", "Stealing a laptop"], exp: "Phishing emails often look like they come from trusted sources like banks or IT." },
+        { q: "Which port is used for DNS?", a: "C", ops: ["80", "443", "53", "22"], exp: "Port 53 is the standard for DNS queries." },
+        { q: "What does a 'Vulnerability Scanner' do?", a: "B", ops: ["It fixes all viruses automatically", "It identifies known weaknesses in a system or network", "It hides your IP address", "It monitors employee productivity"], exp: "Scanners find the 'holes' so you can patch them before an attacker finds them." },
+        { q: "What is 'WPA3'?", a: "B", ops: ["A type of printer", "A modern security protocol for Wi-Fi networks", "A version of Windows", "A gaming console"], exp: "WPA3 provides better encryption and protection against password guessing on Wi-Fi." },
+        { q: "What is a 'Keylogger'?", a: "B", ops: ["A tool to organize keys", "Software that records every keystroke made by a user", "A type of encryption key", "A secure password manager"], exp: "Keyloggers are used to steal passwords and sensitive messages as you type them." },
+        { q: "What is 'Duo' or 'Google Authenticator' an example of?", a: "B", ops: ["An operating system", "A Multi-Factor Authentication (MFA) app", "A web browser", "A video game"], exp: "These apps provide a second layer of security beyond just a password." },
+        { q: "What is the main purpose of 'Data Masking'?", a: "A", ops: ["To hide data from hackers by replacing sensitive info with fake data", "To delete old files", "To compress large videos", "To make data look more professional"], exp: "Masking allows developers to work with realistic data without seeing actual private customer info." },
+        { q: "What is 'Shoulder Surfing'?", a: "B", ops: ["A sport", "Looking over someone's shoulder to see their password or screen", "Using a drone to spy", "Cracking a Wi-Fi password"], exp: "This is a simple physical social engineering technique." },
+        { q: "What is a 'Logic Bomb'?", a: "B", ops: ["A difficult math problem", "Malicious code that triggers when a specific condition is met", "A hardware failure", "A type of security audit"], exp: "A logic bomb might stay hidden until a specific date or until an employee's name is removed from payroll." },
+        { q: "What is 'Encryption at Rest'?", a: "B", ops: ["Encrypting data while it is being sent over the internet", "Encrypting data while it is stored on a disk or drive", "Turning off the computer", "Encrypting data only at night"], exp: "This protects data if the physical hard drive is stolen." },
+        { q: "Which of these is a 'Physical' security threat?", a: "B", ops: ["Phishing email", "Tailgating (following someone into a secure area)", "SQL Injection", "Weak password"], exp: "Tailgating involves physically entering a building by following an authorized person." },
+        { q: "What is 'Whaling'?", a: "B", ops: ["Hunting big fish", "A phishing attack targeted at high-level executives (CEOs)", "A type of heavy-duty server", "Monitoring large data sets"], exp: "Whaling is high-stakes phishing targeting 'big fish' (executives)." },
+        { q: "What does 'Shadow IT' refer to?", a: "B", ops: ["IT work done at night", "Using hardware or software without the approval of the IT department", "A dark-themed operating system", "Secret government projects"], exp: "Shadow IT creates security gaps because the IT department can't protect what they don't know about." },
+        { q: "What is 'Fuzzing'?", a: "B", ops: ["Cleaning a computer screen", "Providing invalid or random data to a program to find security holes", "A blurry image on a monitor", "A type of network cable"], exp: "Fuzzing helps find bugs and crashes by bombarding an app with unexpected input." },
+        { q: "The ultimate goal of an Ethical Hacker is to:", a: "B", ops: ["Steal money", "Improve the security posture of an organization by finding and reporting flaws", "Break the law without getting caught", "Delete all company data"], exp: "Ethical hackers use the same tools as criminals but for the purpose of helping organizations stay safe." }
+    ];
+
+    // 2. RANDOMIZATION LOGIC (Fisher-Yates)
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+    shuffleArray(allQuestions); // Shuffle immediately on load
+
+    // 3. CORE QUIZ ENGINE
+    let currentSet = 0; 
+    const itemsPerSet = 10;
+    let score = 0;
+    let userAnswers = {};
+    let submittedInSet = new Set();
+
+    function renderSet() {
+        const mount = document.getElementById('quiz-mount');
+        mount.innerHTML = '';
+        const start = currentSet * itemsPerSet;
+        const end = start + itemsPerSet;
+        const setQuestions = allQuestions.slice(start, end);
+
+        setQuestions.forEach((item, index) => {
+            const actualIdx = start + index;
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.id = `q-card-${actualIdx}`;
+            
+            let optionsHtml = item.ops.map((op, i) => {
+                const letter = String.fromCharCode(65 + i);
+                const isSelected = userAnswers[actualIdx] === letter ? 'selected' : '';
+                return `<div class="option ${isSelected}" onclick="selectOp(${actualIdx}, '${letter}', this)">${letter}) ${op}</div>`;
+            }).join('');
+
+            card.innerHTML = `
+                <div class="question-text">${actualIdx + 1}. ${item.q}</div>
+                <div id="opts-${actualIdx}">${optionsHtml}</div>
+                <button class="btn-check" id="btn-${actualIdx}" onclick="check(${actualIdx})" ${submittedInSet.has(actualIdx) ? 'disabled' : ''}>
+                    ${submittedInSet.has(actualIdx) ? 'Submitted' : 'Submit Answer'}
+                </button>
+                <div id="fb-${actualIdx}" class="feedback"></div>
+            `;
+            mount.appendChild(card);
+            if (submittedInSet.has(actualIdx)) showFeedback(actualIdx);
+        });
+
+        document.getElementById('set-num').innerText = currentSet + 1;
+        window.scrollTo(0,0);
+        checkSetCompletion();
+    }
+
+    window.selectOp = (idx, letter, el) => {
+        if (submittedInSet.has(idx)) return;
+        userAnswers[idx] = letter;
+        Array.from(el.parentElement.children).forEach(c => c.classList.remove('selected'));
+        el.classList.add('selected');
+    };
+
+    window.check = (idx) => {
+        if (!userAnswers[idx]) return alert("Please select an answer first!");
+        submittedInSet.add(idx);
+        if (userAnswers[idx] === allQuestions[idx].a) {
+            score++;
+            document.getElementById('score').innerText = score;
+        }
+        showFeedback(idx);
+        document.getElementById(`btn-${idx}`).disabled = true;
+        document.getElementById(`btn-${idx}`).innerText = "Submitted";
+
+        const nextIdx = idx + 1;
+        const nextCard = document.getElementById(`q-card-${nextIdx}`);
+        if (nextCard) {
+            setTimeout(() => { nextCard.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 300);
+        } else {
+            checkSetCompletion(); 
+        }
+    };
+
+    function showFeedback(idx) {
+        const fb = document.getElementById(`fb-${idx}`);
+        const isCorrect = userAnswers[idx] === allQuestions[idx].a;
+        fb.style.display = 'block';
+        fb.className = `feedback ${isCorrect ? 'correct-style' : 'wrong-style'}`;
+        fb.innerHTML = `<strong>${isCorrect ? '✓ Correct!' : '✗ Incorrect'}</strong><br>
+                        Answer: ${allQuestions[idx].a}<br>
+                        <em>Why:</em> ${allQuestions[idx].exp}`;
+    }
+
+    function checkSetCompletion() {
+        const start = currentSet * itemsPerSet;
+        const end = start + itemsPerSet;
+        let count = 0;
+        for(let i = start; i < end; i++) {
+            if(submittedInSet.has(i)) count++;
+        }
+
+        if(count === itemsPerSet) {
+            const mount = document.getElementById('quiz-mount');
+            const overlay = document.createElement('div');
+            overlay.className = 'set-end-overlay';
+            let message = (currentSet < 9) ? 
+                `<h3>Set ${currentSet + 1} Complete!</h3><p>Ready for the next 10 questions?</p>` :
+                `<h3>Full Exam Complete!</h3><p>Your Final Score: ${score}/100</p>`;
+
+            overlay.innerHTML = message;
+            if(currentSet < 9) {
+                const nextBtn = document.createElement('button');
+                nextBtn.className = 'btn-action btn-next';
+                nextBtn.innerText = "Continue to Next Set";
+                nextBtn.onclick = () => { currentSet++; renderSet(); };
+                overlay.appendChild(nextBtn);
+            }
+            const quitBtn = document.createElement('button');
+            quitBtn.className = 'btn-action btn-quit';
+            quitBtn.innerText = "Finish & Quit";
+            quitBtn.onclick = () => { alert(`Final Score: ${score}/100.`); location.reload(); };
+            overlay.appendChild(quitBtn);
+            mount.appendChild(overlay);
+            overlay.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+
+    renderSet();
+</script>
+</body>
+</html>

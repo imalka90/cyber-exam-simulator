@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberConnect | Terminal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #0a0a0a;
+            color: #00ff41;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        .cyber-panel {
+            border: 1px solid #00ff41;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);
+            background: rgba(0, 0, 0, 0.95);
+            padding: 3rem;
+            width: 100%;
+            max-width: 500px;
+            position: relative;
+        }
+        .btn-cyber {
+            border: 1px solid #00ff41;
+            padding: 12px;
+            width: 200px;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+        }
+        .btn-cyber:hover {
+            background: #00ff41;
+            color: #000;
+            box-shadow: 0 0 20px #00ff41;
+        }
+        input {
+            background: rgba(0, 255, 65, 0.05) !important;
+            border: 1px solid #00ff41 !important;
+            color: #00ff41 !important;
+            padding: 12px;
+            width: 100%;
+            margin-bottom: 15px;
+            outline: none;
+        }
+        #success-modal {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #00ff41;
+            color: #000;
+            padding: 20px 40px;
+            font-weight: bold;
+            box-shadow: 0 0 30px #00ff41;
+            z-index: 100;
+            white-space: nowrap;
+        }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <div id="success-modal">USER REGISTRATION SUCCESS</div>
+
+    <div class="cyber-panel text-center">
+        <div id="portal-title" class="text-2xl mb-10 font-bold tracking-tighter">ACCESS_PORTAL_v3.0</div>
+
+        <div id="main-nav" class="flex justify-center gap-4">
+            <button onclick="openLogin()" class="btn-cyber">Login to Connect</button>
+            <button onclick="openRegister()" class="btn-cyber">Register</button>
+        </div>
+
+        <div id="login-section" class="hidden mt-6">
+            <div id="login-step-1">
+                <input type="text" id="user-id" placeholder="USER_ID">
+                <button onclick="nextStep()" class="btn-cyber w-full">CONTINUE</button>
+            </div>
+            <div id="login-step-2" class="hidden">
+                <input type="password" id="user-pass" placeholder="PASS_KEY">
+                <button onclick="handleLogin()" class="btn-cyber w-full">AUTHORIZE</button>
+            </div>
+        </div>
+
+        <form id="register-section" class="hidden mt-6 text-left">
+            <input type="text" placeholder="FULL_NAME" required>
+            <input type="text" id="reg-contact" placeholder="EMAIL OR PHONE" required>
+            <button type="submit" class="btn-cyber w-full mt-4">INITIALIZE ACCOUNT</button>
+        </form>
+    </div>
+
+    <script>
+        const mainNav = document.getElementById('main-nav');
+        const loginSection = document.getElementById('login-section');
+        const regSection = document.getElementById('register-section');
+        const modal = document.getElementById('success-modal');
+
+        function openLogin() {
+            regSection.classList.add('hidden');
+            mainNav.classList.add('hidden');
+            loginSection.classList.remove('hidden');
+        }
+
+        function openRegister() {
+            loginSection.classList.add('hidden');
+            mainNav.classList.add('hidden');
+            regSection.classList.remove('hidden');
+        }
+
+        function nextStep() {
+            if(document.getElementById('user-id').value) {
+                document.getElementById('login-step-1').classList.add('hidden');
+                document.getElementById('login-step-2').classList.remove('hidden');
+            }
+        }
+
+        // Handle Registration with Database
+        regSection.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = e.target.querySelector('input[placeholder="FULL_NAME"]').value;
+            const contact = document.getElementById('reg-contact').value;
+            const passkey = prompt("Set your secret Passkey for future logins:");
+
+            if (!passkey) return;
+
+            const res = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, passkey, contact })
+            });
+
+            if (res.ok) {
+                modal.innerText = "USER REGISTRATION SUCCESS";
+                modal.style.display = 'block';
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                    openLogin();
+                }, 2000);
+            } else {
+                alert("Registration Failed: User might already exist.");
+            }
+        });
+
+        // Handle Login with Database
+        async function handleLogin() {
+            const username = document.getElementById('user-id').value;
+            const passkey = document.getElementById('user-pass').value;
+
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, passkey })
+            });
+
+            if (res.ok) {
+                modal.innerText = "ACCESS GRANTED... LOADING EXAM";
+                modal.style.display = 'block';
+                setTimeout(() => {
+                    // Redirect to your randomized Q&A file
+                    window.location.href = "Full_Code_Random Q&A.html"; 
+                }, 1500);
+            } else {
+                alert("ACCESS DENIED: INVALID CREDENTIALS");
+            }
+        }
+    </script>
+</body>
+</html>
